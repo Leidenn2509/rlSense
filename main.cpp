@@ -1,13 +1,20 @@
 #include <iostream>
 
 #include <librealsense2/rs.hpp>
-#include <string.h>
 #include <opencv2/opencv.hpp>
 
 using namespace rs2;
 using namespace cv;
 
 const int BASELINE = 50;
+
+Mat getImage(frame &frame) {
+    const int w = frame.as<rs2::video_frame>().get_width();
+    const int h = frame.as<rs2::video_frame>().get_height();
+
+    cv::Mat image(cv::Size(w, h), CV_8UC1, (void *) frame.get_data(), cv::Mat::AUTO_STEP);
+    return image;
+}
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -38,28 +45,38 @@ int main() {
         Ptr<SIFT> sift = cv::SIFT::create();
 
 
-
         int i = 0;
-        for (auto &a: results) {
-            const int w = a.as<rs2::video_frame>().get_width();
-            const int h = a.as<rs2::video_frame>().get_height();
 
-            cv::Mat image(cv::Size(w, h), CV_8UC1, (void *) a.get_data(), cv::Mat::AUTO_STEP);
-            cv::imshow("test" + std::__cxx11::to_string(i), image);
-//            cv::imwrite(std::__cxx11::to_string(all) + "_" + std::__cxx11::to_string(i) + "_.png", image);
+        cv::Mat image1 = getImage(results[0]);
+        cv::Mat image2 = getImage(results[1]);
 
-            SiftFeatureDetector siftFeatureDetector;
-            std::vector<KeyPoint> keyPoints;
+        cv::imshow("test1", image1);
+        cv::imshow("test2", image2);
 
-            siftFeatureDetector.detect(image, keyPoints)
+        Ptr<SiftFeatureDetector> siftFeatureDetector = SiftFeatureDetector::create();
+        std::vector<KeyPoint> keyPoints1, keyPoints2;
+
+//        siftFeatureDetector.detect(image1, keyPoints1);
+//        siftFeatureDetector.detect(image2, keyPoints2);
+//
+        SiftDescriptorExtractor siftDescriptorExtractor;
+        Mat descriptor1, descriptor2;
+//        siftDescriptorExtractor.compute(image1, keyPoints1, descriptor1);
+//        siftDescriptorExtractor.compute(image2, keyPoints2, descriptor2);
+        siftFeatureDetector->detectAndCompute(image1, Mat::ones(image1.rows, image1.cols, image1.type()), keyPoints1, descriptor1);
+        siftFeatureDetector->detectAndCompute(image2, Mat::ones(image2.rows, image2.cols, image2.type()), keyPoints2, descriptor2);
+
+        BFMatcher matcher(NORM_L2);
+        std::vector<DMatch> matches;
+        matcher.match(descriptor1, descriptor2, matches);
+        Mat res(image1.rows, image1.cols + image2.cols, image1.type());
+        drawMatches(image1, keyPoints1, image2, keyPoints2, matches, res);
+        imshow("blati", res);
 
 
-
-            i++;
-            int k = cv::waitKey(1);
-            if (k == 'x') {
-                end = true;
-            }
+        int k = cv::waitKey(1);
+        if (k == 'x') {
+            end = true;
         }
         all++;
 
@@ -69,13 +86,6 @@ int main() {
     return 0;
 }
 
-Mat getImage(frame frame) {
-    return const int w = a.as<rs2::video_frame>().get_width();
-    const int h = a.as<rs2::video_frame>().get_height();
-
-    cv::Mat image(cv::Size(w, h), CV_8UC1, (void *) a.get_data(), cv::Mat::AUTO_STEP);
-
-}
 
 Mat depth(Mat first, Mat second) {
 
