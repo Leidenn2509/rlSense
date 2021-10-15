@@ -3,18 +3,12 @@
 #include <librealsense2/rs.hpp>
 #include <opencv2/opencv.hpp>
 
+#include "lib/DepthCalculator.h"
+
 using namespace rs2;
 using namespace cv;
 
 const int BASELINE = 50;
-
-Mat getImage(frame &frame) {
-    const int w = frame.as<rs2::video_frame>().get_width();
-    const int h = frame.as<rs2::video_frame>().get_height();
-
-    cv::Mat image(cv::Size(w, h), CV_8UC1, (void *) frame.get_data(), cv::Mat::AUTO_STEP);
-    return image;
-}
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -42,13 +36,8 @@ int main() {
         });
 
 
-        Ptr<SIFT> sift = cv::SIFT::create();
-
-
-        int i = 0;
-
-        cv::Mat image1 = getImage(results[0]);
-        cv::Mat image2 = getImage(results[1]);
+        cv::Mat image1 = depth_calculator::getImage(results[0]);
+        cv::Mat image2 = depth_calculator::getImage(results[1]);
 
         cv::imshow("test1", image1);
         cv::imshow("test2", image2);
