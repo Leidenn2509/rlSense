@@ -10,6 +10,14 @@ using namespace cv;
 
 const int BASELINE = 50;
 
+cv::Mat getImage(const rs2::frame &frame) {
+    const int w = frame.as<rs2::video_frame>().get_width();
+    const int h = frame.as<rs2::video_frame>().get_height();
+
+//    cv::Mat image(cv::Size(w, h), CV_8UC1, (void *) frame.get_data(), cv::Mat::AUTO_STEP);
+    return {cv::Size(w, h), CV_8UC1, (void *) frame.get_data(), cv::Mat::AUTO_STEP};
+}
+
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
@@ -36,38 +44,19 @@ int main() {
         });
 
 
-        cv::Mat image1 = depth_calculator::getImage(results[0]);
-        cv::Mat image2 = depth_calculator::getImage(results[1]);
+        cv::Mat image1 = getImage(results[0]);
+        cv::Mat image2 = getImage(results[1]);
 
         cv::imshow("test1", image1);
         cv::imshow("test2", image2);
 
-        Ptr<SiftFeatureDetector> siftFeatureDetector = SiftFeatureDetector::create();
-        std::vector<KeyPoint> keyPoints1, keyPoints2;
-
-//        siftFeatureDetector.detect(image1, keyPoints1);
-//        siftFeatureDetector.detect(image2, keyPoints2);
-//
-        SiftDescriptorExtractor siftDescriptorExtractor;
-        Mat descriptor1, descriptor2;
-//        siftDescriptorExtractor.compute(image1, keyPoints1, descriptor1);
-//        siftDescriptorExtractor.compute(image2, keyPoints2, descriptor2);
-        siftFeatureDetector->detectAndCompute(image1, Mat::ones(image1.rows, image1.cols, image1.type()), keyPoints1, descriptor1);
-        siftFeatureDetector->detectAndCompute(image2, Mat::ones(image2.rows, image2.cols, image2.type()), keyPoints2, descriptor2);
-
-        BFMatcher matcher(NORM_L2);
-        std::vector<DMatch> matches;
-        matcher.match(descriptor1, descriptor2, matches);
-        Mat res(image1.rows, image1.cols + image2.cols, image1.type());
-        drawMatches(image1, keyPoints1, image2, keyPoints2, matches, res);
-        imshow("blati", res);
-
+        Mat res = depth_calculator::again(image1, image2);
+        cv::imshow("res", res);
 
         int k = cv::waitKey(1);
         if (k == 'x') {
             end = true;
         }
-        all++;
 
 
     }
